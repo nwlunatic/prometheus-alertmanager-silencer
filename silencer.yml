@@ -1,0 +1,10 @@
+maintenances:
+  - matchers:
+      - "alertname=test"
+    schedule: "6 * * * *"
+    duration: "1s"
+
+  - matchers:
+      - "alertname=test2"
+    schedule: "* * * * *"
+    duration: "2s"

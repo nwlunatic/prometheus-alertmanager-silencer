@@ -1,0 +1,17 @@
+version: '2.1'
+
+services:
+  dockerize:
+    image: jwilder/dockerize:0.6.0
+
+  alertmanager:
+    image: prom/alertmanager:v0.21.0
+    volumes:
+      - ./data/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+
+  tests:
+    image: golang:1.16.3-buster
+    env_file:
+      - .env-base

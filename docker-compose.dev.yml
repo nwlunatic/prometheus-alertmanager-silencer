@@ -1,0 +1,14 @@
+version: '2.1'
+
+services:
+  dockerize:
+    extends:
+      file: docker-compose.yml
+      service: dockerize
+
+  alertmanager:
+    extends:
+      file: docker-compose.yml
+      service: alertmanager
+    ports:
+      - "9093:9093"
