@@ -26,6 +26,8 @@ func TestStatusBoard_Render(t *testing.T) {
 
 	yamlMaintenanceIndex := BuildYamlMaintenanceIndex([]YamlMaintenance{maintenance1, maintenance2})
 
+	now := time.Now()
+
 	testCases := []struct {
 		name                      string
 		watchedMaintenanceStorage watchedMaintenanceStorage
@@ -42,7 +44,7 @@ func TestStatusBoard_Render(t *testing.T) {
 				items: []WatchedMaintenance{
 					{
 						m1,
-						m1.Schedule.Next(time.Now()),
+						m1.Schedule.Next(now),
 						true,
 					},
 				},
@@ -54,7 +56,7 @@ func TestStatusBoard_Render(t *testing.T) {
   duration: 50s
 next: %s
 isActive: true
-`, m1.Schedule.Next(time.Now()).Format(time.RFC3339))),
+`, m1.Schedule.Next(now).Format(time.RFC3339))),
 		},
 		{
 			name: "one active, one disabled maintenances",
@@ -62,12 +64,12 @@ isActive: true
 				items: []WatchedMaintenance{
 					{
 						m1,
-						m1.Schedule.Next(time.Now()),
+						m1.Schedule.Next(now),
 						true,
 					},
 					{
 						m2,
-						m2.Schedule.Next(time.Now()),
+						m2.Schedule.Next(now),
 						false,
 					},
 				},
@@ -87,7 +89,7 @@ maintenance:
   duration: 30m
 next: %s
 isActive: false
-`, m1.Schedule.Next(time.Now()).Format(time.RFC3339), m2.Schedule.Next(time.Now()).Format(time.RFC3339))),
+`, m1.Schedule.Next(now).Format(time.RFC3339), m2.Schedule.Next(now).Format(time.RFC3339))),
 		},
 	}
 

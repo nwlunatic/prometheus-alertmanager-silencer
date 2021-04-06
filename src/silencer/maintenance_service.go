@@ -26,6 +26,7 @@ type MaintenanceService struct {
 	maintenances             []Maintenance
 	activeMaintenanceStorage activeMaintenanceStorage
 	silencer                 silencer
+	clock                    clock
 
 	cron        *cron.Cron
 	cronEntries map[int]cron.EntryID
@@ -38,6 +39,7 @@ func NewMaintenanceService(
 	maintenances []Maintenance,
 	activeMaintenanceStorage activeMaintenanceStorage,
 	silencer silencer,
+	clock clock,
 	logger logrus.FieldLogger,
 ) *MaintenanceService {
 	return &MaintenanceService{
@@ -45,6 +47,7 @@ func NewMaintenanceService(
 		maintenances,
 		activeMaintenanceStorage,
 		silencer,
+		clock,
 		cron.New(),
 		make(map[int]cron.EntryID),
 		logger,
@@ -85,7 +88,7 @@ type WatchedMaintenance struct {
 func (s *MaintenanceService) WatchedMaintenances() []WatchedMaintenance {
 	result := make([]WatchedMaintenance, len(s.maintenances))
 
-	now := time.Now()
+	now := s.clock.Now()
 	for i, m := range s.maintenances {
 		result[i] = WatchedMaintenance{
 			Maintenance: m,
@@ -161,7 +164,7 @@ func (s *MaintenanceService) recoverState(ctx context.Context) error {
 }
 
 func (s *MaintenanceService) addMissingActiveMaintenances(ctx context.Context, maintenances []Maintenance) {
-	now := time.Now()
+	now := s.clock.Now()
 	for _, m := range maintenances {
 		if m.IsActiveAt(now) {
 			s.addMaintenance(ctx, m)

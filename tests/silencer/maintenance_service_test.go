@@ -2,6 +2,7 @@ package silencer
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -17,6 +18,11 @@ import (
 )
 
 func TestMaintenanceService(t *testing.T) {
+	now := time.Now().Truncate(time.Minute).Add(40 * time.Second)
+	clockMock := silencer.ClockMock{
+		now,
+	}
+
 	maintenance1 := silencer.YamlMaintenance{
 		[]string{"alertname=test1"},
 		"* * * * *",
@@ -26,7 +32,7 @@ func TestMaintenanceService(t *testing.T) {
 	maintenance2 := silencer.YamlMaintenance{
 		[]string{"alertname=test2"},
 		"* * * * *",
-		"50s",
+		"20s",
 	}
 
 	m1 := silencer.MustMaintenance(silencer.ParseMaintenance(maintenance1))
@@ -96,6 +102,7 @@ func TestMaintenanceService(t *testing.T) {
 
 			silenceService := silencer.NewSilenceService(
 				amClient.Silence,
+				clockMock,
 			)
 			ctx := context.Background()
 
@@ -112,6 +119,7 @@ func TestMaintenanceService(t *testing.T) {
 				silencer.MustMaintenances(silencer.ParseMaintenances(tc.maintenances)),
 				silencer.NewActiveMaintenanceStorage(),
 				silenceService,
+				clockMock,
 				logger,
 			)
 			err := maintenanceService.Start()
@@ -126,6 +134,8 @@ func TestMaintenanceService(t *testing.T) {
 				comments = append(comments, *s.Comment)
 			}
 
+			// alertmanager api does not guarantee order of silences
+			sort.Strings(comments)
 			assert.Equal(t, tc.expectedSilenceComments, comments)
 			assert.Equal(t, tc.expectedWatchedMaintenances, maintenanceService.WatchedMaintenances())
 		})

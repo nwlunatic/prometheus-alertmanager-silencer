@@ -43,13 +43,16 @@ func main() {
 		logger.Fatal(err)
 	}
 
+	clock := silencer.Clock{}
 	maintenanceService := silencer.NewMaintenanceService(
 		"maintenance service",
 		config.Maintenances,
 		silencer.NewActiveMaintenanceStorage(),
 		silencer.NewSilenceService(
 			cli.NewAlertmanagerClient(u).Silence,
+			clock,
 		),
+		clock,
 		logger,
 	)
 	err = maintenanceService.Start()

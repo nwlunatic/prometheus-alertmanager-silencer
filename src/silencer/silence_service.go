@@ -24,18 +24,21 @@ func (id ActiveSilenceID) strfmtUUID() strfmt.UUID {
 
 type SilenceService struct {
 	silenceClient *silence.Client
+	clock         clock
 }
 
 func NewSilenceService(
 	silenceClient *silence.Client,
+	clock clock,
 ) *SilenceService {
 	return &SilenceService{
 		silenceClient,
+		clock,
 	}
 }
 
 func (s *SilenceService) Add(ctx context.Context, silence Silence) (ActiveSilenceID, error) {
-	startsAt := time.Now().UTC()
+	startsAt := s.clock.Now().UTC()
 	endsAt := startsAt.Add(silence.Duration)
 
 	start := strfmt.DateTime(startsAt)
