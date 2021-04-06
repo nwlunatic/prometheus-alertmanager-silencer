@@ -4,24 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/prometheus/alertmanager/api/v2/models"
 	"github.com/robfig/cron/v3"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 )
-
-type MaintenanceHash uuid.UUID
-
-func (hash MaintenanceHash) String() string {
-	return uuid.UUID(hash).String()
-}
-
-type Maintenance struct {
-	Hash     MaintenanceHash
-	Matchers models.Matchers
-	Schedule cron.Schedule
-	Duration time.Duration
-}
 
 type activeMaintenanceStorage interface {
 	Add(hash MaintenanceHash)
@@ -120,6 +106,7 @@ func (s *MaintenanceService) addMaintenance(ctx context.Context, maintenance Mai
 	})
 	if err != nil {
 		s.logger.WithError(err).Infof("failed to post silence: %s", err.Error())
+		return
 	}
 
 	s.activeMaintenanceStorage.Add(maintenance.Hash)
@@ -145,11 +132,14 @@ func (s *MaintenanceService) recoverState(ctx context.Context) error {
 		return err
 	}
 
+	maintenancesWithoutSilences := make([]Maintenance, 0)
 	for _, m := range s.maintenances {
 		_, ok := activeMaintenanceIndex[m.Hash]
 		if ok {
 			s.activeMaintenanceStorage.Add(m.Hash)
 			delete(activeMaintenanceIndex, m.Hash)
+		} else {
+			maintenancesWithoutSilences = append(maintenancesWithoutSilences, m)
 		}
 	}
 
@@ -165,7 +155,18 @@ func (s *MaintenanceService) recoverState(ctx context.Context) error {
 		}
 	}
 
+	s.addMissingActiveMaintenances(ctx, maintenancesWithoutSilences)
+
 	return nil
+}
+
+func (s *MaintenanceService) addMissingActiveMaintenances(ctx context.Context, maintenances []Maintenance) {
+	now := time.Now()
+	for _, m := range maintenances {
+		if m.IsActiveAt(now) {
+			s.addMaintenance(ctx, m)
+		}
+	}
 }
 
 func buildActiveMaintenanceIndex(activeSilences []ActiveSilence) (map[MaintenanceHash]ActiveSilenceID, error) {
