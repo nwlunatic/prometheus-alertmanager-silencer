@@ -1,4 +1,3 @@
-# DOCKERFLAGS := --rm --user $$(id -u):$$(id -g) -v $(CURDIR):/app:rw -w /app
 DOCKERFLAGS := --rm -v $(CURDIR):/app:rw -w /app
 BUILD_DEV_IMAGE_PATH := golang:1.16.3-buster
 IMAGE_PATH := nwlunatic/prometheus-alertmanager-silencer
@@ -27,6 +26,11 @@ tag-image:
 .PHONY: push-image
 push-image:
 	docker push $(IMAGE_PATH):$(IMAGE_VERSION)
+
+.PHONY: deploy
+deploy:
+	export IMAGE_VERSION=$(IMAGE_VERSION)
+	envsubst < deploy/deploy.yml | kubectl apply -f -
 
 .PHONY: test
 test:
