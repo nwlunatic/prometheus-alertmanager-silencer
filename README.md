@@ -1,9 +1,7 @@
 # prometheus-alertmanager-silencer
-
 Allow silencing alerts based on maintenance schedule config. Status board can be reached via http on `/`.
 
 ## config
-
 ```yaml
 maintenances:
   - matchers:
@@ -18,7 +16,6 @@ maintenances:
 ```
 
 ## status board
-
 ```yaml
 maintenance:
   matchers:
@@ -50,3 +47,10 @@ isActive: true
 * `make lint`
 * `make test` runs unit tests
 * `make tests-with-infrastructure` runs integration tests with infrastructure. Require starting dev infrastructure first.
+
+## deploy
+checkout to required tag and run deploy
+```
+git checkout <tag>
+make deploy
+```
