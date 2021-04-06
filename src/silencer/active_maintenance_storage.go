@@ -4,13 +4,13 @@ import "sync"
 
 type ActiveMaintenanceStorage struct {
 	items map[MaintenanceHash]struct{}
-	mux   sync.Mutex
+	mux   sync.RWMutex
 }
 
 func NewActiveMaintenanceStorage() *ActiveMaintenanceStorage {
 	return &ActiveMaintenanceStorage{
 		make(map[MaintenanceHash]struct{}),
-		sync.Mutex{},
+		sync.RWMutex{},
 	}
 }
 
@@ -29,6 +29,9 @@ func (s *ActiveMaintenanceStorage) Delete(hash MaintenanceHash) {
 }
 
 func (s *ActiveMaintenanceStorage) IsActive(hash MaintenanceHash) bool {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+
 	_, ok := s.items[hash]
 	return ok
 }
