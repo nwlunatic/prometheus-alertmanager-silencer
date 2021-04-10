@@ -21,8 +21,8 @@ type Maintenance struct {
 	Duration time.Duration
 }
 
-func (m Maintenance) IsActiveAt(t time.Time) bool {
+func (m Maintenance) ActiveAt(t time.Time) (bool, time.Time) {
 	durationTimeAgo := t.Add(-m.Duration)
-	m.Schedule.Next(durationTimeAgo)
-	return m.Schedule.Next(durationTimeAgo).Before(t)
+	startAt := m.Schedule.Next(durationTimeAgo)
+	return startAt.Before(t), startAt
 }

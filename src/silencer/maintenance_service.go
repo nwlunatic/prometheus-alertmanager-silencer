@@ -64,7 +64,7 @@ func (s *MaintenanceService) Start() error {
 
 	for i, maintenance := range s.maintenances {
 		entryID := s.cron.Schedule(maintenance.Schedule, cron.FuncJob(func() {
-			s.addMaintenance(ctx, maintenance)
+			s.addMaintenance(ctx, maintenance, s.clock.Now())
 		}))
 
 		s.cronEntries[i] = entryID
@@ -100,9 +100,10 @@ func (s *MaintenanceService) WatchedMaintenances() []WatchedMaintenance {
 	return result
 }
 
-func (s *MaintenanceService) addMaintenance(ctx context.Context, maintenance Maintenance) {
+func (s *MaintenanceService) addMaintenance(ctx context.Context, maintenance Maintenance, startAt time.Time) {
 	silenceID, err := s.silencer.Add(ctx, Silence{
 		maintenance.Matchers,
+		startAt,
 		maintenance.Duration,
 		maintenance.Hash.String(),
 		s.name,
@@ -166,8 +167,9 @@ func (s *MaintenanceService) recoverState(ctx context.Context) error {
 func (s *MaintenanceService) addMissingActiveMaintenances(ctx context.Context, maintenances []Maintenance) {
 	now := s.clock.Now()
 	for _, m := range maintenances {
-		if m.IsActiveAt(now) {
-			s.addMaintenance(ctx, m)
+		isActive, startAt := m.ActiveAt(now)
+		if isActive {
+			s.addMaintenance(ctx, m, startAt)
 		}
 	}
 }

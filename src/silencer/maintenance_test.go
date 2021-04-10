@@ -13,6 +13,7 @@ func TestMaintenance_IsActiveAt(t *testing.T) {
 		maintenance Maintenance
 		at          time.Time
 		isActive    bool
+		startAt     time.Time
 	}{
 		{
 			maintenance: Maintenance{
@@ -21,6 +22,7 @@ func TestMaintenance_IsActiveAt(t *testing.T) {
 			},
 			at:       time.Time{}.Add(20 * time.Second),
 			isActive: true,
+			startAt:  time.Time{},
 		},
 		{
 			maintenance: Maintenance{
@@ -29,12 +31,15 @@ func TestMaintenance_IsActiveAt(t *testing.T) {
 			},
 			at:       time.Time{}.Add(40 * time.Second),
 			isActive: false,
+			startAt:  time.Time{}.Add(60 * time.Second),
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			assert.Equal(t, tc.isActive, tc.maintenance.IsActiveAt(tc.at))
+			isActive, startAt := tc.maintenance.ActiveAt(tc.at)
+			assert.Equal(t, tc.isActive, isActive)
+			assert.Equal(t, tc.startAt, startAt)
 		})
 	}
 }

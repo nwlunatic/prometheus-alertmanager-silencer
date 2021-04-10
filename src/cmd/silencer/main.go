@@ -50,7 +50,6 @@ func main() {
 		silencer.NewActiveMaintenanceStorage(),
 		silencer.NewSilenceService(
 			cli.NewAlertmanagerClient(u).Silence,
-			clock,
 		),
 		clock,
 		logger,

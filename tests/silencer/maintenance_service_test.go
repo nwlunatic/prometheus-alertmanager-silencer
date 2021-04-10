@@ -40,6 +40,7 @@ func TestMaintenanceService(t *testing.T) {
 
 	silence1 := silencer.Silence{
 		m1.Matchers,
+		now,
 		m1.Duration,
 		m1.Hash.String(),
 		"maintenance service",
@@ -49,6 +50,7 @@ func TestMaintenanceService(t *testing.T) {
 		mustTypeMatchers(cli.TypeMatchers([]labels.Matcher{
 			mustParseMatcher(labels.ParseMatcher("alertname=test1")),
 		})),
+		now,
 		time.Minute,
 		uuid.NewV4().String(),
 		"maintenance service",
@@ -58,6 +60,7 @@ func TestMaintenanceService(t *testing.T) {
 		mustTypeMatchers(cli.TypeMatchers([]labels.Matcher{
 			mustParseMatcher(labels.ParseMatcher("alertname=test1")),
 		})),
+		now,
 		time.Minute,
 		"other comment",
 		"other author",
@@ -102,7 +105,6 @@ func TestMaintenanceService(t *testing.T) {
 
 			silenceService := silencer.NewSilenceService(
 				amClient.Silence,
-				clockMock,
 			)
 			ctx := context.Background()
 
