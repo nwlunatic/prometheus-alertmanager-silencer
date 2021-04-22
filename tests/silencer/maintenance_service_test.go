@@ -128,7 +128,6 @@ func TestMaintenanceService(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer maintenanceService.Stop()
 
 			activeSilences := infrastructure.GetActiveSilences(t, amClient)
 			comments := make([]string, 0)
