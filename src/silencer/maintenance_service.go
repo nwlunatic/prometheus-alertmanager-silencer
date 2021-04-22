@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
@@ -75,8 +76,15 @@ func (s *MaintenanceService) Start() error {
 	return nil
 }
 
-func (s *MaintenanceService) Stop() {
-	s.cron.Stop()
+func (s *MaintenanceService) Stop(ctx context.Context) error {
+	stopCtx := s.cron.Stop()
+	<-stopCtx.Done()
+	err := stopCtx.Err()
+	if errors.Cause(err) != context.Canceled {
+		return err
+	}
+
+	return nil
 }
 
 type WatchedMaintenance struct {

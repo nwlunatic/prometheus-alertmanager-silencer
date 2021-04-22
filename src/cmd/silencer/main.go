@@ -1,14 +1,16 @@
 package main
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
-	"syscall"
+	"sync"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/nwlunatic/prometheus-alertmanager-silencer/src/httpserver"
+	"github.com/nwlunatic/prometheus-alertmanager-silencer/src/signals"
 	"github.com/prometheus/alertmanager/cli"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -58,7 +60,6 @@ func main() {
 	if err != nil {
 		logger.Fatal(err)
 	}
-	defer maintenanceService.Stop()
 
 	statusBoardHandler := silencer.NewStatusBoardHandler(
 		silencer.NewStatusBoard(
@@ -67,26 +68,45 @@ func main() {
 		),
 	)
 
-	errChan := make(chan error, 10)
 	r := chi.NewRouter()
 	r.Get("/", statusBoardHandler.Handle())
+
+	server := httpserver.NewServer(&http.Server{Addr: net.JoinHostPort("", "5000"), Handler: r})
+	serverErr := make(chan error)
 	go func() {
-		errChan <- http.ListenAndServe(net.JoinHostPort("", "5000"), r)
+		defer close(serverErr)
+		serverErr <- server.Start()
 	}()
 
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-
-	for {
-		select {
-		case <-sig:
-			return
-		case err := <-errChan:
-			if err != nil {
-				logger.Fatal(err)
-			}
+	gracefulStopErrors := signals.BindGracefulStop(context.Background(), server, maintenanceService)
+	errChan := joinErrorChannels(serverErr, gracefulStopErrors)
+	for err := range errChan {
+		if err != nil {
+			logger.Fatal(err)
 		}
 	}
+}
+
+func joinErrorChannels(in ...<-chan error) <-chan error {
+	out := make(chan error)
+	var wg sync.WaitGroup
+
+	for _, e := range in {
+		wg.Add(1)
+		go func(e <-chan error) {
+			for err := range e {
+				out <- err
+			}
+			wg.Done()
+		}(e)
+	}
+
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+
+	return out
 }
 
 // cliFlags is a union of the fields, which application could parse from CLI args
